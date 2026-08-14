@@ -3,135 +3,113 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=800, height=480">
-  <title>HKO Warning Signals</title>
+  <title>HKO Warnings</title>
   <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      margin: 0;
-      padding: 0;
-      font-family: Arial, sans-serif;
       background: white;
-      color: black;
-      min-height: 100vh;
-      box-sizing: border-box;
+      width: 800px;
+      height: 480px;
+      overflow: hidden;
+      font-family: Arial, sans-serif;
     }
-    .icons {
+    #warnings {
       display: flex;
       flex-wrap: wrap;
       gap: 0;
-      margin: 0;
       padding: 0;
-      justify-content: flex-start;
+      margin: 0;
       align-items: flex-start;
     }
     .warning-icon {
-      width: 25px;
-      height: 25px;
+      width: 30px;
+      height: 30px;
       object-fit: contain;
       display: block;
-      margin: 0;
-      padding: 0;
     }
     .no-warning {
-      font-size: 25px;
+      font-size: 20px;
       color: #555;
-      margin: 0;
       padding: 8px;
     }
   </style>
 </head>
 <body>
-  <div class="icons" id="warnings">
+  <div id="warnings">
     <div class="no-warning">載入中...</div>
   </div>
 
   <script>
     const HKO_URL = "https://data.weather.gov.hk/weatherAPI/opendata/weather.php?dataType=warnsum&lang=tc";
 
-    const WARNING_ICONS = {
-      "WTS": "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_12_ts.png",
+    const ICONS = {
+      "WTS":    "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_12_ts.png",
       "WRAINA": "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_09_rain%20amber.png",
       "WRAINR": "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_10_rain%20red.png",
       "WRAINB": "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_11_rain%20black.png",
-      "TC1": "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_01_tc1.png",
-      "TC3": "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_02_tc3.png",
-      "TC8NE": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/tc8ne.gif",
-      "TC8SE": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/tc8b.gif",
-      "TC8SW": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/tc8c.gif",
-      "TC8NW": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/tc8d.gif",
-      "TC9": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/tc9.gif",
-      "TC10": "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_08_tc10.png",
-      "WHOT": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/vhot.gif",
-      "WCOLD": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/cold.gif",
+      "TC1":    "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_01_tc1.png",
+      "TC3":    "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_02_tc3.png",
+      "TC8NE":  "https://www.hko.gov.hk/en/wxinfo/dailywx/images/tc8ne.gif",
+      "TC8SE":  "https://www.hko.gov.hk/en/wxinfo/dailywx/images/tc8b.gif",
+      "TC8SW":  "https://www.hko.gov.hk/en/wxinfo/dailywx/images/tc8c.gif",
+      "TC8NW":  "https://www.hko.gov.hk/en/wxinfo/dailywx/images/tc8d.gif",
+      "TC9":    "https://www.hko.gov.hk/en/wxinfo/dailywx/images/tc9.gif",
+      "TC10":   "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_08_tc10.png",
+      "WHOT":   "https://www.hko.gov.hk/en/wxinfo/dailywx/images/vhot.gif",
+      "WCOLD":  "https://www.hko.gov.hk/en/wxinfo/dailywx/images/cold.gif",
       "WMSGNL": "https://www.hko.gov.hk/images/HKOWarningSymbols/warn800_15_sms.png",
-      "WL": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/landslip.gif",
+      "WL":     "https://www.hko.gov.hk/en/wxinfo/dailywx/images/landslip.gif",
       "WFROST": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/frost.gif",
       "WFNTSA": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/ntfl.gif",
       "WFIREY": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/firey.gif",
-      "WFIRER": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/firer.gif",
-      "WTMW": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/tsunami.gif"
+      "WFIRER": "https://www.hko.gov.hk/en/wxinfo/dailywx/images/firer.gif"
     };
 
-    let hasFetched = false;   // guard – only allow one fetch
+    // Preload common icons
+    ["WTS","WRAINA","WRAINR","WRAINB","TC1","TC3","TC8NE","WHOT"].forEach(code => {
+      const img = new Image();
+      img.src = ICONS[code];
+    });
 
     async function loadWarnings() {
-      if (hasFetched) return;          // already fetched once → do nothing
-      hasFetched = true;
-
       const container = document.getElementById("warnings");
 
       try {
         const res = await fetch(HKO_URL);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
 
-        const activeCodes = new Set();
-
+        const active = [];
         for (const [key, info] of Object.entries(data)) {
-          if (!info || !info.actionCode || info.actionCode === "CANCEL") continue;
-
-          const signalCode = info.code || key;
-
-          if (key === "WRAIN" && info.code) {
-            activeCodes.add(info.code);
-          } else if (key === "WTCSGNL" && info.code) {
-            activeCodes.add(info.code);
-          } else {
-            activeCodes.add(signalCode);
-          }
+          if (!info || info.actionCode === "CANCEL") continue;
+          const code = info.code || key;
+          if (ICONS[code]) active.push(code);
         }
+
+        const order = ["TC10","TC9","TC8NE","TC8SE","TC8SW","TC8NW","TC3","TC1",
+                       "WRAINB","WRAINR","WRAINA","WTS","WL","WFNTSA","WMSGNL",
+                       "WHOT","WCOLD","WFROST","WFIRER","WFIREY"];
+        active.sort((a, b) => order.indexOf(a) - order.indexOf(b));
 
         container.innerHTML = "";
 
-        if (activeCodes.size === 0) {
+        if (active.length === 0) {
           container.innerHTML = '<div class="no-warning">目前沒有警告</div>';
           return;
         }
 
-        const order = [
-          "TC10","TC9","TC8NE","TC8SE","TC8SW","TC8NW","TC3","TC1",
-          "WRAINB","WRAINR","WRAINA",
-          "WTS","WL","WFNTSA","WMSGNL",
-          "WHOT","WCOLD","WFROST",
-          "WFIRER","WFIREY","WTMW"
-        ];
-
-        const sorted = [...activeCodes].sort((a, b) => {
-          const ia = order.indexOf(a);
-          const ib = order.indexOf(b);
-          return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        const promises = active.map(code => {
+          return new Promise(resolve => {
+            const img = document.createElement("img");
+            img.className = "warning-icon";
+            img.src = ICONS[code];
+            img.alt = code;
+            img.onload = () => resolve(img);
+            img.onerror = () => resolve(null);
+            container.appendChild(img);
+          });
         });
 
-        sorted.forEach(code => {
-          const url = WARNING_ICONS[code];
-          if (!url) return;
-
-          const img = document.createElement("img");
-          img.className = "warning-icon";
-          img.src = url;
-          img.alt = code;
-          img.title = code;
-          container.appendChild(img);
-        });
+        await Promise.all(promises);
 
       } catch (err) {
         console.error(err);
@@ -139,7 +117,6 @@
       }
     }
 
-    // Fetch only once when the page loads
     loadWarnings();
   </script>
 </body>
